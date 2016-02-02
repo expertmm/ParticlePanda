@@ -12,7 +12,8 @@ from kivy.core.image import Image
 from kivy.uix.image import Image as ImageWidget
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
-import particlesystem as kivyparticle 
+#import particlesystem as kivyparticle 
+import kivyparticle
 from colorpicker.cblcolorpicker import CBLColorPicker, CBLColorWheel
 from kivy.properties import NumericProperty, BooleanProperty, ListProperty, StringProperty, ObjectProperty
 from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelHeader
@@ -24,7 +25,7 @@ from kivy.graphics.opengl import glReadPixels, GL_RGBA, GL_UNSIGNED_BYTE
 from kivy.uix.scrollview import ScrollView
 import os
 import math
-import pygame
+#import pygame
 from random import randint
 from functools import partial
 from time import sleep
@@ -191,7 +192,7 @@ class ParticleLoadSaveLayout(Widget):
             self.new_file_popup.open()
             return
 
-        print "writing to", fname
+        print("writing to", fname)
 
         pbuilder = self.parent.parent
         pbuilder.active_filename = os.path.basename(fname)
@@ -245,7 +246,7 @@ class ParticleLoadSaveLayout(Widget):
         self.save_particle_popup_content = SaveParticlePopupContents(self)
 
     def save_thumbnail(self, thumbnail_filename, *largs):
-        print 'saving thumbnail to', thumbnail_filename
+        print('saving thumbnail to', thumbnail_filename)
         canvas_pos = [int(x) for x in self.pbuilder.particle_window.pos]
         canvas_size = [int(x) for x in self.pbuilder.particle_window.size]
         # particle_x = int(self.pbuilder.demo_particle.emitter_x)
@@ -261,17 +262,17 @@ class ParticleLoadSaveLayout(Widget):
         data = glReadPixels(canvas_pos[0], canvas_pos[1], canvas_size[0], int(0.9*canvas_size[1]), GL_RGBA, GL_UNSIGNED_BYTE)
         data = str(buffer(data))
 
-        image = pygame.image.fromstring(data, (canvas_size[0], int(0.9*canvas_size[1])), 'RGBA', True)
-        pygame.image.save(image, thumbnail_filename)
+        #image = pygame.image.fromstring(data, (canvas_size[0], int(0.9*canvas_size[1])), 'RGBA', True)
+        #pygame.image.save(image, thumbnail_filename)
 
     def xml_from_attribute(self,parent, attribute, fields, values):
 
         xml_element = parent.createElement(attribute)
 
         try:
-            if isinstance(fields, basestring): raise TypeError
+            if isinstance(fields, str): raise TypeError
             for idx in range(len(fields)):
-                if isinstance(values[idx], basestring):
+                if isinstance(values[idx], str):
                     val = str(values[idx])
                 elif int(float(values[idx])) == float(values[idx]):
                     val = str(int(float(values[idx])))
@@ -279,7 +280,7 @@ class ParticleLoadSaveLayout(Widget):
                     val = str(float(values[idx]))
                 xml_element.setAttribute(fields[idx], val)
         except TypeError:
-            if isinstance(values,basestring):
+            if isinstance(values,str):
                 val = str(values)
             elif int(float(values)) == float(values):
                 val = str(int(float(values)))
@@ -400,7 +401,7 @@ class ImageChooserPopupContent(GridLayout):
 
 class ImageChooser(Widget):
     button_text = StringProperty("Choose a texture...")
-    image_location = StringProperty('media/particle.png')
+    image_location = StringProperty('media/particles/particle.png')
     
     def __init__(self,**kwargs):
         image_chooser_popup_content = ImageChooserPopupContent(image_chooser = self)
@@ -458,7 +459,7 @@ class Particle_Color_Sliders(Widget):
 
 class ParticlePanel(Widget):
     particle_builder = ObjectProperty(None)
-    texture_path = StringProperty("media/particle.png")
+    texture_path = StringProperty("media/particles/particle.png")
     max_num_particles = NumericProperty(200.)
     max_num_particles_min = NumericProperty(1.)
     max_num_particles_max = NumericProperty(500.)
@@ -498,6 +499,18 @@ class ParticlePanel(Widget):
     end_rotation_variance = NumericProperty(0.)
     end_rotation_variance_min = NumericProperty(0.)
     end_rotation_variance_max = NumericProperty(360.)
+
+
+
+    #def on_touch_down(self, touch):
+        #self.particle_builder.demo_particle.emitter_x = float(touch.x)
+        #self.particle_builder.demo_particle.emitter_y = float(touch.y)
+        #print("touched "+str(touch.x)+","+str(touch.y))
+
+    #def on_touch_move(self, touch):
+        #self.particle_builder.demo_particle.emitter_x = float(touch.x)
+        #self.particle_builder.demo_particle.emitter_y = float(touch.y)
+        #print("touched "+str(touch.x)+","+str(touch.y))
 
     def __init__(self, pbuilder, **kwargs):
         super(ParticlePanel, self).__init__(**kwargs)
@@ -845,8 +858,7 @@ class BlendFuncChoices(Popup):
         self.src_choices_box.add_widget(label)
         label = Label(text = 'Dest')
         self.dest_choices_box.add_widget(label)
-        for each in kivyparticle.BLEND_FUNC:
-            
+        for each in kivyparticle.engine.BLEND_FUNC:
             button = ToggleButton(text = str(self.func_chooser.translate_blend_func_value(each)), font_size = self.size[0]*.12, id = str(each), group = 'func_choices')
             self.src_choices_box.add_widget(button)
             button.bind(on_press=self.press_src_button)
@@ -902,7 +914,7 @@ class BlendFuncChooser(BoxLayout):
             
 
     def set_dest_text(self, text, button_id, state):
-        print 'setting dest', state
+        print('setting dest', state)
         if state == 'down':
             self.current_dest = int(button_id)
 

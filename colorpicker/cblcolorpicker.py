@@ -57,7 +57,7 @@ class CBLColorWheel(Widget):
     def __init__(self, **kwargs):
         super(CBLColorWheel,self).__init__(**kwargs)
 
-        self.SVs = [(float(x)/self.piece_divisions,1) for x in range(self.piece_divisions)] + [(1, float(y)/self.piece_divisions) for y in reversed(range(self.piece_divisions))]
+        self.SVs = [(float(x)/self.piece_divisions,1) for x in range(self.piece_divisions)] + [(1, float(y)/self.piece_divisions) for y in reversed(list(range(self.piece_divisions)))]
 
     def on_origin(self,instance,value):
         self.init_wheel(None)
@@ -215,7 +215,7 @@ class ColorArc(InstructionGroup):
         v += (end_point_inner*2)
         v += (end_point_outer*2)
 
-        return Mesh(vertices = v, indices = range(len(v)/4), mode='triangle_strip')
+        return Mesh(vertices = v, indices = list(range(len(v)/4)), mode='triangle_strip')
 
 
     def change_color(self, color = None, color_delta = None, sv = None, a = None):

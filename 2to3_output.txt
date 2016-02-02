@@ -1,0 +1,79 @@
+RefactoringTool: Skipping implicit fixer: buffer
+RefactoringTool: Skipping implicit fixer: idioms
+RefactoringTool: Skipping implicit fixer: set_literal
+RefactoringTool: Skipping implicit fixer: ws_comma
+RefactoringTool: Refactored C:\Users\jgustafson\Documents\GitHub\ParticlePandaPy3\main.py
+--- C:\Users\jgustafson\Documents\GitHub\ParticlePandaPy3\main.py       (original)
++++ C:\Users\jgustafson\Documents\GitHub\ParticlePandaPy3\main.py       (refactored)
+@@ -191,7 +191,7 @@
+             self.new_file_popup.open()
+             return
+
+-        print "writing to", fname
++        print("writing to", fname)
+
+         pbuilder = self.parent.parent
+         pbuilder.active_filename = os.path.basename(fname)
+@@ -245,7 +245,7 @@
+         self.save_particle_popup_content = SaveParticlePopupContents(self)
+
+     def save_thumbnail(self, thumbnail_filename, *largs):
+-        print 'saving thumbnail to', thumbnail_filename
++        print('saving thumbnail to', thumbnail_filename)
+         canvas_pos = [int(x) for x in self.pbuilder.particle_window.pos]
+         canvas_size = [int(x) for x in self.pbuilder.particle_window.size]
+         # particle_x = int(self.pbuilder.demo_particle.emitter_x)
+@@ -269,9 +269,9 @@
+         xml_element = parent.createElement(attribute)
+
+         try:
+-            if isinstance(fields, basestring): raise TypeError
++            if isinstance(fields, str): raise TypeError
+             for idx in range(len(fields)):
+-                if isinstance(values[idx], basestring):
++                if isinstance(values[idx], str):
+                     val = str(values[idx])
+                 elif int(float(values[idx])) == float(values[idx]):
+                     val = str(int(float(values[idx])))
+@@ -279,7 +279,7 @@
+                     val = str(float(values[idx]))
+                 xml_element.setAttribute(fields[idx], val)
+         except TypeError:
+-            if isinstance(values,basestring):
++            if isinstance(values,str):
+                 val = str(values)
+             elif int(float(values)) == float(values):
+                 val = str(int(float(values)))
+@@ -902,7 +902,7 @@
+
+
+     def set_dest_text(self, text, button_id, state):
+-        print 'setting dest', state
++        print('setting dest', state)
+         if state == 'down':
+             self.current_dest = int(button_id)
+
+RefactoringTool: Refactored C:\Users\jgustafson\Documents\GitHub\ParticlePandaPy3\colorpicker\cblcolorpicker.py
+--- C:\Users\jgustafson\Documents\GitHub\ParticlePandaPy3\colorpicker\cblcolorpicker.py (original)
++++ C:\Users\jgustafson\Documents\GitHub\ParticlePandaPy3\colorpicker\cblcolorpicker.py (refactored)
+@@ -57,7 +57,7 @@
+     def __init__(self, **kwargs):
+         super(CBLColorWheel,self).__init__(**kwargs)
+
+-        self.SVs = [(float(x)/self.piece_divisions,1) for x in range(self.piece_divisions)] + [(1, float(y)/self.piece_divisions) for y in reversed(range(self.piece_divisions))]
++        self.SVs = [(float(x)/self.piece_divisions,1) for x in range(self.piece_divisions)] + [(1, float(y)/self.piece_divisions) for y in reversed(list(range(self.piece_divisions)))]
+
+     def on_origin(self,instance,value):
+         self.init_wheel(None)
+@@ -215,7 +215,7 @@
+         v += (end_point_inner*2)
+         v += (end_point_outer*2)
+
+-        return Mesh(vertices = v, indices = range(len(v)/4), mode='triangle_strip')
++        return Mesh(vertices = v, indices = list(range(len(v)/4)), mode='triangle_strip')
+
+
+     def change_color(self, color = None, color_delta = None, sv = None, a = None):
+RefactoringTool: Files that were modified:
+RefactoringTool: C:\Users\jgustafson\Documents\GitHub\ParticlePandaPy3\main.py
+RefactoringTool: C:\Users\jgustafson\Documents\GitHub\ParticlePandaPy3\colorpicker\cblcolorpicker.py
