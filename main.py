@@ -8,11 +8,13 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.boxlayout import BoxLayout
-from kivy.core.image import Image
+#from kivy.core.image import Image
+from kivy.core.image import Image as CoreImage
+from kivy.graphics.texture import Texture
 from kivy.uix.image import Image as ImageWidget
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
-#import particlesystem as kivyparticle 
+#import particlesystem as kivyparticle
 import kivyparticle
 from colorpicker.cblcolorpicker import CBLColorPicker, CBLColorWheel
 from kivy.properties import NumericProperty, BooleanProperty, ListProperty, StringProperty, ObjectProperty
@@ -101,7 +103,7 @@ class ParticleParamsLayout(Widget):
 class ParticleLoadSaveLayout(Widget):
     new_particle = ObjectProperty(None)
     load_dir = 'templates'
-   
+
     def __init__(self,**kwargs):
         load_particle_popup_content = LoadParticlePopupContents(self)
         self.load_particle_popup = Popup(title="Particle Effects", content=load_particle_popup_content, size_hint = (None,None), size=(512,512), on_open=self._popup_opened, on_dismiss=self._popup_dismissed)
@@ -126,7 +128,7 @@ class ParticleLoadSaveLayout(Widget):
 
     def _reset_layout(self, layout):
         for w in layout.children[:]:
-            # this removes all the kivy template instances without removing the toggle buttons on top. 
+            # this removes all the kivy template instances without removing the toggle buttons on top.
             # can't use isinstance(w, BoxLayout) because they are all boxlayouts.
             if hasattr(w, 'thisisabutton'):
                 layout.remove_widget(w)
@@ -211,14 +213,14 @@ class ParticleLoadSaveLayout(Widget):
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'startParticleSizeVariance', ('value'), (pbuilder.demo_particle.start_size_variance)))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishParticleSize', ('value'), (pbuilder.demo_particle.end_size)))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'FinishParticleSizeVariance', ('value'), (pbuilder.demo_particle.end_size_variance)))
-        
+
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'angle', ('value'), (math.degrees(pbuilder.demo_particle.emit_angle))))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'angleVariance', ('value'), (math.degrees(pbuilder.demo_particle.emit_angle_variance))))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationStart', ('value'), (math.degrees(pbuilder.demo_particle.start_rotation))))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationStartVariance', ('value'), (math.degrees(pbuilder.demo_particle.start_rotation_variance))))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationEnd', ('value'), (math.degrees(pbuilder.demo_particle.end_rotation))))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationEndVariance', ('value'), (math.degrees(pbuilder.demo_particle.end_rotation_variance))))
-        
+
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'speed', ('value'), (pbuilder.demo_particle.speed)))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'speedVariance', ('value'), (pbuilder.demo_particle.speed_variance)))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'radialAcceleration', ('value'), (pbuilder.demo_particle.radial_acceleration)))
@@ -230,14 +232,14 @@ class ParticleLoadSaveLayout(Widget):
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'minRadius', ('value'), (pbuilder.demo_particle.min_radius)))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotatePerSecond', ('value'), (math.degrees(pbuilder.demo_particle.rotate_per_second))))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotatePerSecondVariance', ('value'), (math.degrees(pbuilder.demo_particle.rotate_per_second_variance))))
-        
+
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'startColor', ('red', 'green', 'blue', 'alpha'), pbuilder.demo_particle.start_color))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'startColorVariance', ('red', 'green', 'blue', 'alpha'), pbuilder.demo_particle.start_color_variance))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishColor', ('red', 'green', 'blue', 'alpha'), pbuilder.demo_particle.end_color))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishColorVariance', ('red', 'green', 'blue', 'alpha'), pbuilder.demo_particle.end_color_variance))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'blendFuncSource', ('value'), (pbuilder.demo_particle.blend_factor_source)))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'blendFuncDestination', ('value'), (pbuilder.demo_particle.blend_factor_dest)))
-        
+
         with open(os.path.join('user_effects', fname), 'w') as outf:
             new_particle.writexml(outf, indent = "  ", newl = "\n")
 
@@ -252,15 +254,22 @@ class ParticleLoadSaveLayout(Widget):
         # particle_x = int(self.pbuilder.demo_particle.emitter_x)
         # particle_y = int(self.pbuilder.demo_particle.emitter_y)
         # screenshot_y = particle_y - min(canvas_size)/2
-        
+
         # if screenshot_y < canvas_pos[1]:
         #     screenshot_y = canvas_pos[1]
         # elif screenshot_y > canvas_pos[1] + 0.9*canvas_size[1] - canvas_size[0]:
         #     screenshot_y = canvas_pos[1] + 0.9*canvas_size[1] - canvas_size[0]
 
         # data = glReadPixels(canvas_pos[0], screenshot_y, min(canvas_size), min(canvas_size), GL_RGBA, GL_UNSIGNED_BYTE)
-        data = glReadPixels(canvas_pos[0], canvas_pos[1], canvas_size[0], int(0.9*canvas_size[1]), GL_RGBA, GL_UNSIGNED_BYTE)
-        data = str(buffer(data))
+        #data = glReadPixels(canvas_pos[0], canvas_pos[1], canvas_size[0], int(0.9*canvas_size[1]), GL_RGBA, GL_UNSIGNED_BYTE)
+        #data = str(repr(memoryview(data)))
+
+        #data = glReadPixels(canvas_pos[0], canvas_pos[1], canvas_size[0], canvas_size[1]-1, GL_RGBA, GL_UNSIGNED_BYTE)
+        #this_texture = Texture.create(
+        #    size=(self.width, self.height), colorfmt='rgba', bufferfmt='ubyte')
+        #this_texture.blit_buffer(data, colorfmt='rgba', bufferfmt='ubyte')
+        #this_texture.save(thumbnail_filename)  #WARNING: flipped
+        self.pbuilder.particle_window.screenshot(thumbnail_filename)
 
         #image = pygame.image.fromstring(data, (canvas_size[0], int(0.9*canvas_size[1])), 'RGBA', True)
         #pygame.image.save(image, thumbnail_filename)
@@ -307,7 +316,7 @@ class ParticleLoadSaveLayout(Widget):
             pw.remove_widget(pbuilder.demo_particle)
 
         new_particle = kivyparticle.ParticleSystem(name)
-        new_particle.pos = pw.center_x, pw.center_y   
+        new_particle.pos = pw.center_x, pw.center_y
         pbuilder.demo_particle = new_particle
         pw.add_widget(pbuilder.demo_particle)
         pbuilder.demo_particle.start()
@@ -319,7 +328,7 @@ class ParticleLoadSaveLayout(Widget):
         pl.open_first_tab()
 
         progress_dialog.dismiss()
-        
+
 class GetNewFilenameLayout(Widget):
     fname_input = ObjectProperty(None)
 
@@ -330,19 +339,19 @@ class GetNewFilenameLayout(Widget):
 
     def ok(self):
         text = self.fname_input.text[:]
-        if text.strip() == "": 
+        if text.strip() == "":
             self.cancel()
             return
         if not text.endswith('.pex'): text += '.pex'
         self.load_save_widget.save_filename(text)
         self.load_save_widget.new_file_popup.dismiss()
         Window.release_all_keyboards()
-        
+
 
     def cancel(self):
         self.load_save_widget.new_file_popup.dismiss()
         Window.release_all_keyboards()
-        
+
 
 class LoadParticlePopupContents(Widget):
     blayout = ObjectProperty(None)
@@ -389,7 +398,7 @@ class ImageChooserPopupContent(GridLayout):
         # atlasses = self.get_all_images('.', '.atlas')
         for i in png_files:
             self.add_widget(ImageChooserCell(image_location=i, image_chooser = self.image_chooser, size=(self.col_default_width, self.row_default_height)))
-        
+
 
     def get_all_images(self,dir_name,extension):
         outputList = []
@@ -402,7 +411,7 @@ class ImageChooserPopupContent(GridLayout):
 class ImageChooser(Widget):
     button_text = StringProperty("Choose a texture...")
     image_location = StringProperty('media/particles/particle.png')
-    
+
     def __init__(self,**kwargs):
         image_chooser_popup_content = ImageChooserPopupContent(image_chooser = self)
         self.image_chooser_popup = Popup(title="Images", content=image_chooser_popup_content, size_hint = (None,None), size=(512,512))
@@ -557,13 +566,13 @@ class ParticlePanel(Widget):
 
     def on_texture_path(self,instance,value):
         self.particle_builder.demo_particle.texture_path = value
-        self.particle_builder.demo_particle.texture = Image(value).texture
+        self.particle_builder.demo_particle.texture = CoreImage(value).texture
 
     def get_values_from_particle(self):
-        properties = ['max_num_particles', 'life_span', 'life_span_variance', 'start_size', 'start_size_variance', 
-                    'end_size', 'end_size_variance', 'emit_angle', 'emit_angle_variance', 'start_rotation', 
+        properties = ['max_num_particles', 'life_span', 'life_span_variance', 'start_size', 'start_size_variance',
+                    'end_size', 'end_size_variance', 'emit_angle', 'emit_angle_variance', 'start_rotation',
                     'start_rotation_variance', 'end_rotation', 'end_rotation_variance', 'texture_path']
-    
+
         for p in properties:
             if p in ['emit_angle', 'emit_angle_variance', ]:
                 setattr(self,p,getattr(self.particle_builder.demo_particle,p) / 0.0174532925 )
@@ -682,8 +691,8 @@ class BehaviorPanel(Widget):
 
     def get_values_from_particle(self):
         properties = ['emitter_x_variance', 'emitter_y_variance', 'gravity_x', 'gravity_y', 'speed', 'speed_variance',
-                     'radial_acceleration', 'radial_acceleration_variance', 'tangential_acceleration', 
-                     'tangential_acceleration_variance', 'max_radius', 'max_radius_variance', 'min_radius', 
+                     'radial_acceleration', 'radial_acceleration_variance', 'tangential_acceleration',
+                     'tangential_acceleration_variance', 'max_radius', 'max_radius_variance', 'min_radius',
                      ]
 
         for p in properties:
@@ -738,7 +747,7 @@ class ColorPanel(Widget):
         self.particle_builder = pbuilder.parent
 
     def on_current_blend_src(self, instance, value):
-        if not value == None: 
+        if not value == None:
             self.particle_builder.demo_particle.blend_factor_source = value
 
     def on_current_blend_dest(self, instance, value):
@@ -809,7 +818,7 @@ class WorkingFile(Widget):
     filename = StringProperty(None)
 
 class VariableDescriptions(Widget):
-    
+
     def tab_info(self):
         self.pbuilder = self.parent.parent
         self.description_tab = TabbedPanel()
@@ -849,7 +858,7 @@ class BlendFuncChoices(Popup):
         super(BlendFuncChoices, self).__init__(**kwargs)
         self.func_chooser = func_chooser
         self.populate_list()
-        
+
 
     def populate_list(self):
         self.src_choices_box.clear_widgets()
@@ -869,15 +878,15 @@ class BlendFuncChoices(Popup):
             self.dest_choices_box.add_widget(button)
             if self.func_chooser.current_dest == each:
                 button.state = 'down'
-        
+
 
     def press_src_button(self, instance):
         self.func_chooser.set_source_text(instance.text, instance.id, instance.state)
 
     def press_dest_button(self, instance):
         self.func_chooser.set_dest_text(instance.text, instance.id, instance.state)
-            
-    
+
+
 
     def on_open(self):
         #self.populate_list()
@@ -911,7 +920,7 @@ class BlendFuncChooser(BoxLayout):
     def set_source_text(self, text, button_id, state):
         if state == 'down':
             self.current_src = int(button_id)
-            
+
 
     def set_dest_text(self, text, button_id, state):
         print('setting dest', state)
@@ -935,7 +944,7 @@ class BlendFuncChooser(BoxLayout):
             return blend_func_names[func_value]
         else:
             return func_value
-            
+
 Builder.load_file(os.path.dirname(os.path.realpath(__file__)) + '/colorpicker/cblcolorpicker.kv')
 
 class ParticleBuilderApp(App):
