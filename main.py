@@ -35,6 +35,14 @@ from xml.dom.minidom import Document
 import xml.dom.minidom
 from kivy.uix.dropdown import DropDown
 
+profile_path = None
+if "USERPROFILE" in os.environ:
+    profile_path = os.environ['USERPROFILE']
+elif "HOME" in os.environ:
+    profile_path = os.environ['HOME']
+else:
+    print("ERROR: could not find USERPROFILE or HOME")
+    profile_path = "."
 
 class ParticleBuilder(Widget):
     demo_particle = ObjectProperty(kivyparticle.ParticleSystem)
@@ -103,6 +111,7 @@ class ParticleParamsLayout(Widget):
 class ParticleLoadSaveLayout(Widget):
     new_particle = ObjectProperty(None)
     load_dir = 'templates'
+    appdata_pp_path = None
 
     def __init__(self,**kwargs):
         load_particle_popup_content = LoadParticlePopupContents(self)
@@ -160,8 +169,7 @@ class ParticleLoadSaveLayout(Widget):
     def load_user_files(self):
         self.load_particle_popup.content.templatebutton.state = 'normal'
         self.load_particle_popup.content.userbutton.state = 'down'
-
-        self.load_dir = 'user_effects'
+        self.load_dir = self.get_user_effects_path()
         self._load_show_filenames([fn for fn in os.listdir(self.load_dir) if fn.endswith('.pex')])
 
     def show_load_popup(self):
@@ -170,7 +178,7 @@ class ParticleLoadSaveLayout(Widget):
         self.load_particle_popup.open()
 
     def show_save_popup(self):
-        self._save_show_filenames(['[ New file... ]'] + [fn for fn in os.listdir('user_effects') if fn.endswith('.pex')])
+        self._save_show_filenames(['[ New file... ]'] + [fn for fn in os.listdir(self.get_user_effects_path()) if fn.endswith('.pex')])
         self.save_particle_popup.open()
 
     def save_pressed(self):
@@ -184,7 +192,7 @@ class ParticleLoadSaveLayout(Widget):
         self.save_particle_popup.content.blayout_height = 2*layout.padding[0] + len(fnames)*(layout.spacing + self.save_particle_popup.content.label_height)
 
         for f in fnames:
-            ctx = {'text': f, 'icon': os.path.join('user_effects', os.path.splitext(f)[0] + '.png') ,'height': self.save_particle_popup.content.label_height, 'callback': self.save_filename}
+            ctx = {'text': f, 'icon': os.path.join(self.get_user_effects_path(), os.path.splitext(f)[0] + '.png') ,'height': self.save_particle_popup.content.label_height, 'callback': self.save_filename}
             button = Builder.template('FilenameButton', **ctx)
             layout.add_widget(button)
 
@@ -240,12 +248,22 @@ class ParticleLoadSaveLayout(Widget):
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'blendFuncSource', ('value'), (pbuilder.demo_particle.blend_factor_source)))
         particle_values.appendChild(self.xml_from_attribute(new_particle, 'blendFuncDestination', ('value'), (pbuilder.demo_particle.blend_factor_dest)))
 
-        with open(os.path.join('user_effects', fname), 'w') as outf:
+        with open(os.path.join(self.get_user_effects_path(), fname), 'w') as outf:
             new_particle.writexml(outf, indent = "  ", newl = "\n")
 
-        Clock.schedule_once(partial(self.save_thumbnail, os.path.join('user_effects',os.path.splitext(fname)[0]+'.png')), .5)
+        Clock.schedule_once(partial(self.save_thumbnail, os.path.join(self.get_user_effects_path(),os.path.splitext(fname)[0]+'.png')), .5)
         self.save_particle_popup.dismiss()
         self.save_particle_popup_content = SaveParticlePopupContents(self)
+        
+    def get_user_effects_path(self):
+        self.appdata_pp_path = os.path.join(profile_path,'.particlepanda')
+        #if not os.path.isdir(self.appdata_pp_path):
+        #    os.makedir(self.appdata_pp_path)
+        result = os.path.join(self.appdata_pp_path,'user_effects')
+        if not os.path.isdir(result):
+            os.makedirs(result)
+        #dummy_file_path = os.path.join(result, "dummyfile")
+        return result
 
     def save_thumbnail(self, thumbnail_filename, *largs):
         print('saving thumbnail to', thumbnail_filename)
@@ -269,7 +287,8 @@ class ParticleLoadSaveLayout(Widget):
         #    size=(self.width, self.height), colorfmt='rgba', bufferfmt='ubyte')
         #this_texture.blit_buffer(data, colorfmt='rgba', bufferfmt='ubyte')
         #this_texture.save(thumbnail_filename)  #WARNING: flipped
-        self.pbuilder.particle_window.screenshot(thumbnail_filename)
+        #self.pbuilder.particle_window.screenshot(thumbnail_filename)
+        self.pbuilder.particle_window.export_to_png(thumbnail_filename)
 
         #image = pygame.image.fromstring(data, (canvas_size[0], int(0.9*canvas_size[1])), 'RGBA', True)
         #pygame.image.save(image, thumbnail_filename)
