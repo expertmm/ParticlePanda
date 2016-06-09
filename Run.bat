@@ -1,0 +1,1 @@
+IF EXIST "C:\Kivy\python.bat" "C:\Kivy\python.bat" main.py 
