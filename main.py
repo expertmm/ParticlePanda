@@ -14,8 +14,15 @@ from kivy.graphics.texture import Texture
 from kivy.uix.image import Image as ImageWidget
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
-#import particlesystem as kivyparticle
-import kivyparticle
+import sys
+sys.path.append('..')
+try:
+    import KivyPotentParticles.kivyparticle as kivyparticle
+    print("using updated kivyparticle engine")
+except:
+    #import particlesystem as kivyparticle
+    import kivyparticle
+    print("using builtin kivyparticle engine")
 from colorpicker.cblcolorpicker import CBLColorPicker, CBLColorWheel
 from kivy.properties import NumericProperty, BooleanProperty, ListProperty, StringProperty, ObjectProperty
 from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelHeader
@@ -45,7 +52,7 @@ else:
     profile_path = "."
 
 class ParticleBuilder(Widget):
-    demo_particle = ObjectProperty(kivyparticle.ParticleSystem)
+    particlesystem = ObjectProperty(kivyparticle.ParticleSystem)
     particle_window = ObjectProperty(None)
     active_filename = StringProperty(None)
     init_count = NumericProperty(0)
@@ -53,22 +60,22 @@ class ParticleBuilder(Widget):
     def __init__(self, **kwargs):
         super(ParticleBuilder, self).__init__(**kwargs)
 
-    def adjust_particle_system_position(self, center_x, center_y):
-        #on the first on_size the pos property of demo_particle is not accessible
+    def adjust_particle_system_position(self, center_x, center_y, center_z=0.):
+        #on the first on_size the pos property of particlesystem is not accessible
         if self.init_count == 0:
             self.init_count += 1
         else:
-            self.demo_particle.pos = center_x, center_y
+            self.particlesystem.pos = center_x, center_y, center_z
 
     def on_touch_down(self, touch):
         super(ParticleBuilder, self).on_touch_down(touch)
         if self.particle_window.collide_point(touch.x, touch.y):
-            self.demo_particle.pos = touch.x, touch.y
+            self.particlesystem.pos = touch.x, touch.y
 
     def on_touch_move(self, touch):
         super(ParticleBuilder, self).on_touch_move(touch)
         if self.particle_window.collide_point(touch.x, touch.y):
-            self.demo_particle.pos = touch.x, touch.y
+            self.particlesystem.pos = touch.x, touch.y
 
 class ParticleParamsLayout(Widget):
 
@@ -130,10 +137,10 @@ class ParticleLoadSaveLayout(Widget):
         self.pbuilder = self.parent.parent
 
     def _popup_opened(self, instance):
-        self.pbuilder.demo_particle.stop()
+        self.pbuilder.particlesystem.stop()
 
     def _popup_dismissed(self, instance):
-        self.pbuilder.demo_particle.start()
+        self.pbuilder.particlesystem.start()
 
     def _reset_layout(self, layout):
         for w in layout.children[:]:
@@ -174,7 +181,7 @@ class ParticleLoadSaveLayout(Widget):
 
     def show_load_popup(self):
         self.load_templates()
-        # self.pbuilder.demo_particle.stop()
+        # self.pbuilder.particlesystem.stop()
         self.load_particle_popup.open()
 
     def show_save_popup(self):
@@ -210,43 +217,51 @@ class ParticleLoadSaveLayout(Widget):
         particle_values = new_particle.createElement("particleEmitterConfig")
         new_particle.appendChild(particle_values)
 
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'texture', ('name'), (pbuilder.demo_particle.texture_path)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'sourcePositionVariance', ('x', 'y'), (pbuilder.demo_particle.emitter_x_variance, pbuilder.demo_particle.emitter_y_variance)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'gravity', ('x', 'y'), (pbuilder.demo_particle.gravity_x, pbuilder.demo_particle.gravity_y)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'emitterType', ('value'), (pbuilder.demo_particle.emitter_type)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'maxParticles', ('value'), (pbuilder.demo_particle.max_num_particles)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'particleLifeSpan', ('value'), (pbuilder.demo_particle.life_span)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'particleLifespanVariance', ('value'), (pbuilder.demo_particle.life_span_variance)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'startParticleSize', ('value'), (pbuilder.demo_particle.start_size)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'startParticleSizeVariance', ('value'), (pbuilder.demo_particle.start_size_variance)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishParticleSize', ('value'), (pbuilder.demo_particle.end_size)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'FinishParticleSizeVariance', ('value'), (pbuilder.demo_particle.end_size_variance)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'texture', ('name'), (pbuilder.particlesystem.texture_path)))
+        try:
+            #try KivyPotentParticles format first
+            particle_values.appendChild(self.xml_from_attribute(new_particle, 'sourcePositionVariance', ('x', 'y', 'z'), (pbuilder.particlesystem.emitter_variance[0], pbuilder.particlesystem.emitter_variance[1], pbuilder.particlesystem.emitter_variance[2])))
+        except:
+            particle_values.appendChild(self.xml_from_attribute(new_particle, 'sourcePositionVariance', ('x', 'y'), (pbuilder.particlesystem.emitter_x_variance, pbuilder.particlesystem.emitter_y_variance)))
+        try:
+            #try KivyPotentParticles format first
+            particle_values.appendChild(self.xml_from_attribute(new_particle, 'gravity', ('x', 'y', 'z'), (pbuilder.particlesystem.gravity[0], pbuilder.particlesystem.gravity[1], pbuilder.particlesystem.gravity[2])))
+        except:
+            particle_values.appendChild(self.xml_from_attribute(new_particle, 'gravity', ('x', 'y'), (pbuilder.particlesystem.gravity_x, pbuilder.particlesystem.gravity_y)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'emitterType', ('value'), (pbuilder.particlesystem.emitter_type)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'maxParticles', ('value'), (pbuilder.particlesystem.max_num_particles)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'particleLifeSpan', ('value'), (pbuilder.particlesystem.life_span)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'particleLifespanVariance', ('value'), (pbuilder.particlesystem.life_span_variance)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'startParticleSize', ('value'), (pbuilder.particlesystem.start_size)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'startParticleSizeVariance', ('value'), (pbuilder.particlesystem.start_size_variance)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishParticleSize', ('value'), (pbuilder.particlesystem.end_size)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'FinishParticleSizeVariance', ('value'), (pbuilder.particlesystem.end_size_variance)))
 
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'angle', ('value'), (math.degrees(pbuilder.demo_particle.emit_angle))))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'angleVariance', ('value'), (math.degrees(pbuilder.demo_particle.emit_angle_variance))))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationStart', ('value'), (math.degrees(pbuilder.demo_particle.start_rotation))))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationStartVariance', ('value'), (math.degrees(pbuilder.demo_particle.start_rotation_variance))))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationEnd', ('value'), (math.degrees(pbuilder.demo_particle.end_rotation))))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationEndVariance', ('value'), (math.degrees(pbuilder.demo_particle.end_rotation_variance))))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'angle', ('value'), (math.degrees(pbuilder.particlesystem.emit_angle))))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'angleVariance', ('value'), (math.degrees(pbuilder.particlesystem.emit_angle_variance))))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationStart', ('value'), (math.degrees(pbuilder.particlesystem.start_rotation))))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationStartVariance', ('value'), (math.degrees(pbuilder.particlesystem.start_rotation_variance))))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationEnd', ('value'), (math.degrees(pbuilder.particlesystem.end_rotation))))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotationEndVariance', ('value'), (math.degrees(pbuilder.particlesystem.end_rotation_variance))))
 
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'speed', ('value'), (pbuilder.demo_particle.speed)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'speedVariance', ('value'), (pbuilder.demo_particle.speed_variance)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'radialAcceleration', ('value'), (pbuilder.demo_particle.radial_acceleration)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'radialAccelVariance', ('value'), (pbuilder.demo_particle.radial_acceleration_variance)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'tangentialAcceleration', ('value'), (pbuilder.demo_particle.tangential_acceleration)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'tangentialAccelVariance', ('value'), (pbuilder.demo_particle.tangential_acceleration_variance)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'maxRadius', ('value'), (pbuilder.demo_particle.max_radius)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'maxRadiusVariance', ('value'), (pbuilder.demo_particle.max_radius_variance)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'minRadius', ('value'), (pbuilder.demo_particle.min_radius)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotatePerSecond', ('value'), (math.degrees(pbuilder.demo_particle.rotate_per_second))))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotatePerSecondVariance', ('value'), (math.degrees(pbuilder.demo_particle.rotate_per_second_variance))))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'speed', ('value'), (pbuilder.particlesystem.speed)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'speedVariance', ('value'), (pbuilder.particlesystem.speed_variance)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'radialAcceleration', ('value'), (pbuilder.particlesystem.radial_acceleration)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'radialAccelVariance', ('value'), (pbuilder.particlesystem.radial_acceleration_variance)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'tangentialAcceleration', ('value'), (pbuilder.particlesystem.tangential_acceleration)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'tangentialAccelVariance', ('value'), (pbuilder.particlesystem.tangential_acceleration_variance)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'maxRadius', ('value'), (pbuilder.particlesystem.max_radius)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'maxRadiusVariance', ('value'), (pbuilder.particlesystem.max_radius_variance)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'minRadius', ('value'), (pbuilder.particlesystem.min_radius)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotatePerSecond', ('value'), (math.degrees(pbuilder.particlesystem.rotate_per_second))))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'rotatePerSecondVariance', ('value'), (math.degrees(pbuilder.particlesystem.rotate_per_second_variance))))
 
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'startColor', ('red', 'green', 'blue', 'alpha'), pbuilder.demo_particle.start_color))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'startColorVariance', ('red', 'green', 'blue', 'alpha'), pbuilder.demo_particle.start_color_variance))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishColor', ('red', 'green', 'blue', 'alpha'), pbuilder.demo_particle.end_color))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishColorVariance', ('red', 'green', 'blue', 'alpha'), pbuilder.demo_particle.end_color_variance))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'blendFuncSource', ('value'), (pbuilder.demo_particle.blend_factor_source)))
-        particle_values.appendChild(self.xml_from_attribute(new_particle, 'blendFuncDestination', ('value'), (pbuilder.demo_particle.blend_factor_dest)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'startColor', ('red', 'green', 'blue', 'alpha'), pbuilder.particlesystem.start_color))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'startColorVariance', ('red', 'green', 'blue', 'alpha'), pbuilder.particlesystem.start_color_variance))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishColor', ('red', 'green', 'blue', 'alpha'), pbuilder.particlesystem.end_color))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'finishColorVariance', ('red', 'green', 'blue', 'alpha'), pbuilder.particlesystem.end_color_variance))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'blendFuncSource', ('value'), (pbuilder.particlesystem.blend_factor_source)))
+        particle_values.appendChild(self.xml_from_attribute(new_particle, 'blendFuncDestination', ('value'), (pbuilder.particlesystem.blend_factor_dest)))
 
         with open(os.path.join(self.get_user_effects_path(), fname), 'w') as outf:
             new_particle.writexml(outf, indent = "  ", newl = "\n")
@@ -269,8 +284,8 @@ class ParticleLoadSaveLayout(Widget):
         print('saving thumbnail to', thumbnail_filename)
         canvas_pos = [int(x) for x in self.pbuilder.particle_window.pos]
         canvas_size = [int(x) for x in self.pbuilder.particle_window.size]
-        # particle_x = int(self.pbuilder.demo_particle.emitter_x)
-        # particle_y = int(self.pbuilder.demo_particle.emitter_y)
+        # particle_x = int(self.pbuilder.particlesystem.emitter_x)
+        # particle_y = int(self.pbuilder.particlesystem.emitter_y)
         # screenshot_y = particle_y - min(canvas_size)/2
 
         # if screenshot_y < canvas_pos[1]:
@@ -331,14 +346,18 @@ class ParticleLoadSaveLayout(Widget):
             pl.create_tabs()
         else:
             # if not, then the tabs are already there, but we do need to stop and remove the particle
-            pbuilder.demo_particle.stop(clear = True)
-            pw.remove_widget(pbuilder.demo_particle)
+            pbuilder.particlesystem.stop(clear = True)
+            pw.remove_widget(pbuilder.particlesystem)
 
         new_particle = kivyparticle.ParticleSystem(name)
-        new_particle.pos = pw.center_x, pw.center_y
-        pbuilder.demo_particle = new_particle
-        pw.add_widget(pbuilder.demo_particle)
-        pbuilder.demo_particle.start()
+        try:
+            # Try KivyPotentParticles format first:
+            new_particle.pos = pw.center_x, pw.center_y, pw.center_z
+        except:
+            new_particle.pos = pw.center_x, pw.center_y
+        pbuilder.particlesystem = new_particle
+        pw.add_widget(pbuilder.particlesystem)
+        pbuilder.particlesystem.start()
         pbuilder.active_filename = os.path.basename(name)
 
         pl.particle_tabs.tab_list[0].content.get_values_from_particle()
@@ -531,13 +550,13 @@ class ParticlePanel(Widget):
 
 
     #def on_touch_down(self, touch):
-        #self.particle_builder.demo_particle.emitter_x = float(touch.x)
-        #self.particle_builder.demo_particle.emitter_y = float(touch.y)
+        #self.particle_builder.particlesystem.emitter_x = float(touch.x)
+        #self.particle_builder.particlesystem.emitter_y = float(touch.y)
         #print("touched "+str(touch.x)+","+str(touch.y))
 
     #def on_touch_move(self, touch):
-        #self.particle_builder.demo_particle.emitter_x = float(touch.x)
-        #self.particle_builder.demo_particle.emitter_y = float(touch.y)
+        #self.particle_builder.particlesystem.emitter_x = float(touch.x)
+        #self.particle_builder.particlesystem.emitter_y = float(touch.y)
         #print("touched "+str(touch.x)+","+str(touch.y))
 
     def __init__(self, pbuilder, **kwargs):
@@ -545,47 +564,47 @@ class ParticlePanel(Widget):
         self.particle_builder = pbuilder.parent
 
     def on_max_num_particles(self, instance, value):
-        self.particle_builder.demo_particle.max_num_particles = value
+        self.particle_builder.particlesystem.max_num_particles = value
 
     def on_life_span(self, instance, value):
-        self.particle_builder.demo_particle.life_span = value
+        self.particle_builder.particlesystem.life_span = value
 
     def on_life_span_variance(self, instance, value):
-        self.particle_builder.demo_particle.life_span_variance = value
+        self.particle_builder.particlesystem.life_span_variance = value
 
     def on_start_size(self, instance, value):
-        self.particle_builder.demo_particle.start_size = value
+        self.particle_builder.particlesystem.start_size = value
 
     def on_start_size_variance(self, instance, value):
-        self.particle_builder.demo_particle.start_size_variance = value
+        self.particle_builder.particlesystem.start_size_variance = value
 
     def on_end_size(self, instance, value):
-        self.particle_builder.demo_particle.end_size = value
+        self.particle_builder.particlesystem.end_size = value
 
     def on_end_size_variance(self, instance, value):
-        self.particle_builder.demo_particle.end_size_variance = value
+        self.particle_builder.particlesystem.end_size_variance = value
 
     def on_emit_angle(self, instance, value):
-        self.particle_builder.demo_particle.emit_angle = value * 0.0174532925
+        self.particle_builder.particlesystem.emit_angle = value * 0.0174532925
 
     def on_emit_angle_variance(self, instance, value):
-        self.particle_builder.demo_particle.emit_angle_variance = value * 0.0174532925
+        self.particle_builder.particlesystem.emit_angle_variance = value * 0.0174532925
 
     def on_start_rotation(self, instance, value):
-        self.particle_builder.demo_particle.start_rotation = value
+        self.particle_builder.particlesystem.start_rotation = value
 
     def on_start_rotation_variance(self, instance, value):
-        self.particle_builder.demo_particle.start_rotation_variance = value
+        self.particle_builder.particlesystem.start_rotation_variance = value
 
     def on_end_rotation(self, instance, value):
-        self.particle_builder.demo_particle.end_rotation = value
+        self.particle_builder.particlesystem.end_rotation = value
 
     def on_end_rotation_variance(self, instance, value):
-        self.particle_builder.demo_particle.end_rotation_variance = value
+        self.particle_builder.particlesystem.end_rotation_variance = value
 
     def on_texture_path(self,instance,value):
-        self.particle_builder.demo_particle.texture_path = value
-        self.particle_builder.demo_particle.texture = CoreImage(value).texture
+        self.particle_builder.particlesystem.texture_path = value
+        self.particle_builder.particlesystem.texture = CoreImage(value).texture
 
     def get_values_from_particle(self):
         properties = ['max_num_particles', 'life_span', 'life_span_variance', 'start_size', 'start_size_variance',
@@ -594,11 +613,11 @@ class ParticlePanel(Widget):
 
         for p in properties:
             if p in ['emit_angle', 'emit_angle_variance', ]:
-                setattr(self,p,getattr(self.particle_builder.demo_particle,p) / 0.0174532925 )
+                setattr(self,p,getattr(self.particle_builder.particlesystem,p) / 0.0174532925 )
             else:
-                setattr(self,p,getattr(self.particle_builder.demo_particle,p))
+                setattr(self,p,getattr(self.particle_builder.particlesystem,p))
 
-        self.image_chooser_button.image_location = self.particle_builder.demo_particle.texture_path
+        self.image_chooser_button.image_location = self.particle_builder.particlesystem.texture_path
 
 class BehaviorPanel(Widget):
     particle_builder = ObjectProperty(None)
@@ -661,70 +680,92 @@ class BehaviorPanel(Widget):
         self.emitter_type = num_type
 
     def on_emitter_type(self, instance, value):
-        self.particle_builder.demo_particle.emitter_type = value
+        self.particle_builder.particlesystem.emitter_type = value
 
     def on_emitter_x_variance(self, instance, value):
-        self.particle_builder.demo_particle.emitter_x_variance = value
+        try:
+            self.particle_builder.particlesystem.emitter_variance[0] = value
+        except:
+            self.particle_builder.particlesystem.emitter_x_variance = value
 
     def on_emitter_y_variance(self, instance, value):
-        self.particle_builder.demo_particle.emitter_y_variance = value
+        try:
+            self.particle_builder.particlesystem.emitter_variance[1] = value
+        except:
+            self.particle_builder.particlesystem.emitter_y_variance = value
 
     def on_gravity_x(self, instance, value):
-        self.particle_builder.demo_particle.gravity_x = value
+        try:
+            self.particle_builder.particlesystem.gravity[0] = value
+        except:
+            self.particle_builder.particlesystem.gravity_x = value
 
     def on_gravity_y(self, instance, value):
-        self.particle_builder.demo_particle.gravity_y = value
+        try:
+            self.particle_builder.particlesystem.gravity[1] = value
+        except:
+            self.particle_builder.particlesystem.gravity_y = value
 
     def on_speed(self, instance, value):
-        self.particle_builder.demo_particle.speed = value
+        self.particle_builder.particlesystem.speed = value
 
     def on_speed_variance(self, instance, value):
-        self.particle_builder.demo_particle.speed_variance = value
+        self.particle_builder.particlesystem.speed_variance = value
 
     def on_radial_acceleration(self, instance, value):
-        self.particle_builder.demo_particle.radial_acceleration = value
+        self.particle_builder.particlesystem.radial_acceleration = value
 
     def on_radial_acceleration_variance(self, instance, value):
-        self.particle_builder.demo_particle.tangential_acceleration_variance = value
+        self.particle_builder.particlesystem.tangential_acceleration_variance = value
 
     def on_tangential_acceleration(self, instance, value):
-        self.particle_builder.demo_particle.tangential_acceleration = value
+        self.particle_builder.particlesystem.tangential_acceleration = value
 
     def on_tangential_acceleration_variance(self, instance, value):
-        self.particle_builder.demo_particle.tangential_acceleration_variance = value
+        self.particle_builder.particlesystem.tangential_acceleration_variance = value
 
     def on_max_radius(self, instance, value):
-        self.particle_builder.demo_particle.max_radius = value
+        self.particle_builder.particlesystem.max_radius = value
 
     def on_max_radius_variance(self, instance, value):
-        self.particle_builder.demo_particle.max_radius_variance = value
+        self.particle_builder.particlesystem.max_radius_variance = value
 
     def on_min_radius(self, instance, value):
-        self.particle_builder.demo_particle.min_radius = value
+        self.particle_builder.particlesystem.min_radius = value
 
     def on_rotate_per_second(self, instance, value):
-        self.particle_builder.demo_particle.rotate_per_second = math.radians(value)
+        self.particle_builder.particlesystem.rotate_per_second = math.radians(value)
 
     def on_rotate_per_second_variance(self, instance, value):
-        self.particle_builder.demo_particle.rotate_per_second_variance = math.radians(value)
+        self.particle_builder.particlesystem.rotate_per_second_variance = math.radians(value)
 
     def get_values_from_particle(self):
-        properties = ['emitter_x_variance', 'emitter_y_variance', 'gravity_x', 'gravity_y', 'speed', 'speed_variance',
-                     'radial_acceleration', 'radial_acceleration_variance', 'tangential_acceleration',
-                     'tangential_acceleration_variance', 'max_radius', 'max_radius_variance', 'min_radius',
-                     ]
+        properties = None
+        try:
+            properties = ['emitter_variance', 'start_gravity', 'speed', 'speed_variance',
+                         'radial_acceleration', 'radial_acceleration_variance', 'tangential_acceleration',
+                         'tangential_acceleration_variance', 'max_radius', 'max_radius_variance', 'min_radius',
+                         ]
 
-        for p in properties:
-            setattr(self,p,getattr(self.particle_builder.demo_particle,p))
+            for p in properties:
+                setattr(self,p,getattr(self.particle_builder.particlesystem,p))
+        except:
+            properties = ['emitter_x_variance', 'emitter_y_variance', 'gravity_x', 'gravity_y', 'speed', 'speed_variance',
+                         'radial_acceleration', 'radial_acceleration_variance', 'tangential_acceleration',
+                         'tangential_acceleration_variance', 'max_radius', 'max_radius_variance', 'min_radius',
+                         ]
+
+            for p in properties:
+                setattr(self,p,getattr(self.particle_builder.particlesystem,p))
 
         angle_properties = ['rotate_per_second', 'rotate_per_second_variance']
         for p in angle_properties:
-            setattr(self,p,math.degrees(getattr(self.particle_builder.demo_particle,p)))
+            setattr(self,p,math.degrees(getattr(self.particle_builder.particlesystem,p)))
 
-        if self.particle_builder.demo_particle.emitter_type == 0:
+        if self.particle_builder.particlesystem.emitter_type == 0:
             self.gravity_button.state = 'down'
             self.radial_button.state = 'normal'
-        elif self.particle_builder.demo_particle.emitter_type == 1:
+        elif self.particle_builder.particlesystem.emitter_type == 1:
             self.radial_button.state='down'
             self.gravity_button.state = 'normal'
 
@@ -767,57 +808,57 @@ class ColorPanel(Widget):
 
     def on_current_blend_src(self, instance, value):
         if not value == None:
-            self.particle_builder.demo_particle.blend_factor_source = value
+            self.particle_builder.particlesystem.blend_factor_source = value
 
     def on_current_blend_dest(self, instance, value):
         if not value == None:
-            self.particle_builder.demo_particle.blend_factor_dest = value
+            self.particle_builder.particlesystem.blend_factor_dest = value
 
     def on_start_color(self, instance, value):
-        self.particle_builder.demo_particle.start_color = value
+        self.particle_builder.particlesystem.start_color = value
 
     def on_end_color(self, instance, value):
-        self.particle_builder.demo_particle.end_color = value
+        self.particle_builder.particlesystem.end_color = value
 
     def on_start_color_r_variance(self, instance, value):
-        self.particle_builder.demo_particle.start_color_variance[0] = self.start_color_r_variance
+        self.particle_builder.particlesystem.start_color_variance[0] = self.start_color_r_variance
 
     def on_start_color_g_variance(self, instance, value):
-        self.particle_builder.demo_particle.start_color_variance[1] = self.start_color_g_variance
+        self.particle_builder.particlesystem.start_color_variance[1] = self.start_color_g_variance
 
     def on_start_color_b_variance(self, instance, value):
-        self.particle_builder.demo_particle.start_color_variance[2] = self.start_color_b_variance
+        self.particle_builder.particlesystem.start_color_variance[2] = self.start_color_b_variance
 
     def on_start_color_a_variance(self, instance, value):
-        self.particle_builder.demo_particle.start_color_variance[3] = self.start_color_a_variance
+        self.particle_builder.particlesystem.start_color_variance[3] = self.start_color_a_variance
 
     def on_end_color_r_variance(self, instance, value):
-        self.particle_builder.demo_particle.end_color_variance[0] = self.end_color_r_variance
+        self.particle_builder.particlesystem.end_color_variance[0] = self.end_color_r_variance
 
     def on_end_color_g_variance(self, instance, value):
-        self.particle_builder.demo_particle.end_color_variance[1] = self.end_color_g_variance
+        self.particle_builder.particlesystem.end_color_variance[1] = self.end_color_g_variance
 
     def on_end_color_b_variance(self, instance, value):
-        self.particle_builder.demo_particle.end_color_variance[2] = self.end_color_b_variance
+        self.particle_builder.particlesystem.end_color_variance[2] = self.end_color_b_variance
 
     def on_end_color_a_variance(self, instance, value):
-        self.particle_builder.demo_particle.end_color_variance[3] = self.end_color_a_variance
+        self.particle_builder.particlesystem.end_color_variance[3] = self.end_color_a_variance
 
     def get_values_from_particle(self):
-        self.start_color_picker.selected_color = self.particle_builder.demo_particle.start_color
+        self.start_color_picker.selected_color = self.particle_builder.particlesystem.start_color
         self.start_color_picker.get_alpha()
-        self.start_color_variation_sliders.color_r_slider.value = self.particle_builder.demo_particle.start_color_variance[0]
-        self.start_color_variation_sliders.color_g_slider.value = self.particle_builder.demo_particle.start_color_variance[1]
-        self.start_color_variation_sliders.color_b_slider.value = self.particle_builder.demo_particle.start_color_variance[2]
-        self.start_color_variation_sliders.color_a_slider.value = self.particle_builder.demo_particle.start_color_variance[3]
-        self.end_color_picker.selected_color = self.particle_builder.demo_particle.end_color
+        self.start_color_variation_sliders.color_r_slider.value = self.particle_builder.particlesystem.start_color_variance[0]
+        self.start_color_variation_sliders.color_g_slider.value = self.particle_builder.particlesystem.start_color_variance[1]
+        self.start_color_variation_sliders.color_b_slider.value = self.particle_builder.particlesystem.start_color_variance[2]
+        self.start_color_variation_sliders.color_a_slider.value = self.particle_builder.particlesystem.start_color_variance[3]
+        self.end_color_picker.selected_color = self.particle_builder.particlesystem.end_color
         self.end_color_picker.get_alpha()
-        self.end_color_variation_sliders.color_r_slider.value = self.particle_builder.demo_particle.end_color_variance[0]
-        self.end_color_variation_sliders.color_g_slider.value = self.particle_builder.demo_particle.end_color_variance[1]
-        self.end_color_variation_sliders.color_b_slider.value = self.particle_builder.demo_particle.end_color_variance[2]
-        self.end_color_variation_sliders.color_a_slider.value = self.particle_builder.demo_particle.end_color_variance[3]
-        self.blend_func_chooser.current_src = self.particle_builder.demo_particle.blend_factor_source
-        self.blend_func_chooser.current_dest = self.particle_builder.demo_particle.blend_factor_dest
+        self.end_color_variation_sliders.color_r_slider.value = self.particle_builder.particlesystem.end_color_variance[0]
+        self.end_color_variation_sliders.color_g_slider.value = self.particle_builder.particlesystem.end_color_variance[1]
+        self.end_color_variation_sliders.color_b_slider.value = self.particle_builder.particlesystem.end_color_variance[2]
+        self.end_color_variation_sliders.color_a_slider.value = self.particle_builder.particlesystem.end_color_variance[3]
+        self.blend_func_chooser.current_src = self.particle_builder.particlesystem.blend_factor_source
+        self.blend_func_chooser.current_dest = self.particle_builder.particlesystem.blend_factor_dest
 
 class ScrollViewWithBars(ScrollView):
     def _start_decrease_alpha(self, *l):
@@ -866,10 +907,10 @@ class VariableDescriptions(Widget):
         self.description_popup.open()
 
     def _popup_opened(self, instance):
-        self.pbuilder.demo_particle.pause()
+        self.pbuilder.particlesystem.pause()
 
     def _popup_dismissed(self, instance):
-        self.pbuilder.demo_particle.resume()
+        self.pbuilder.particlesystem.resume()
 
 class BlendFuncChoices(Popup):
 
